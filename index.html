@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Timetable University – Responsive Scheduler</title>
+  <title>Timetable University – Responsive Scheduler | Bocaletto Luca</title>
+
   <!-- SEO & Author -->
   <meta name="author" content="Bocaletto Luca">
   <meta name="description" content="Timetable University is a modern, responsive one-page webapp for students to schedule courses by drag-and-drop. Import/export JSON, add, edit, delete courses, detect conflicts, and print directly.">
   <meta name="keywords" content="timetable, university, schedule, drag and drop, responsive, JSON, print, courses">
   <link rel="canonical" href="https://github.com/bocaletto-luca/TimetableUniversity">
+
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
+
   <style>
     /* Color Palette */
     :root {
@@ -22,7 +25,6 @@
       --clr-header-text: #2b2d42;
       --clr-border: #d3d3e2;
       --clr-slot-hover: #ef233c;
-      --clr-print-border: #555;
       --transition: 0.25s ease-in-out;
       --font: 'Roboto', sans-serif;
       --sidebar-width: 280px;
@@ -34,20 +36,15 @@
       font-family: var(--font);
       background: var(--clr-main-bg);
       color: var(--clr-sidebar-text);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      display: flex; flex-direction: column; min-height: 100vh;
     }
-    button, input, select {
-      font: inherit;
-      outline: none;
-    }
+    button, input, select { font: inherit; outline: none; }
     button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
 
     /* Header */
     header {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       justify-content: space-between;
       background: var(--clr-header-bg);
       color: var(--clr-header-text);
@@ -55,106 +52,86 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       position: sticky; top: 0; z-index: 100;
     }
-    header h1 {
-      font-size: 1.4rem;
-      font-weight: 500;
-    }
+    header h1 { font-size: 1.4rem; font-weight: 500; }
     #toggle-sidebar {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 1.6rem;
-      color: var(--clr-header-text);
+      display: none; background: none; border: none;
+      font-size: 1.6rem; color: var(--clr-header-text);
     }
 
     /* Layout */
     #container {
       display: grid;
       grid-template-columns: var(--sidebar-width) 1fr;
-      flex: 1;
-      overflow: hidden;
+      flex: 1; overflow: hidden;
       transition: grid-template-columns var(--transition);
     }
     #sidebar {
       background: var(--clr-sidebar-bg);
-      padding: 1rem;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
+      padding: 1rem; overflow-y: auto;
+      display: flex; flex-direction: column;
     }
     #main {
-      padding: 1rem;
-      overflow: auto;
+      padding: 1rem; overflow: auto;
       background: var(--clr-main-bg);
     }
 
     /* Controls */
     #controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
       margin-bottom: 1rem;
     }
     #controls button {
-      flex: 1;
-      padding: 0.5rem;
-      border: none;
+      flex: 1; padding: 0.5rem; border: none;
       border-radius: 4px;
       background: var(--clr-sidebar-accent);
       color: var(--clr-sidebar-text);
       transition: background var(--transition);
     }
-    #controls button:hover {
-      background: var(--clr-header-bg);
-    }
-    #controls input[type="file"] {
-      display: none;
-    }
+    #controls button:hover { background: var(--clr-header-bg); }
+    #controls input[type="file"] { display: none; }
 
     /* Course Form */
     #course-form {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      display: block; margin-bottom: 1rem;
     }
-    #course-form input,
-    #course-form select {
-      padding: 0.5rem;
+    #course-form input#course-name {
+      width: 100%; padding: 0.5rem;
       border: 1px solid var(--clr-border);
       border-radius: 4px;
-      color: #333;
+      color: #333; margin-bottom: 0.5rem;
+      min-width: 0;
     }
-    #course-form button {
-      border: none;
-      border-radius: 4px;
-      background: var(--clr-slot-hover);
-      color: #fff;
-      transition: background var(--transition);
+    .form-controls {
+      display: flex; gap: 0.5rem;
     }
-    #course-form button:hover {
-      background: #d62828;
+    .form-controls select,
+    .form-controls button {
+      flex: 1; padding: 0.5rem;
+      border-radius: 4px; border: 1px solid var(--clr-border);
+      min-width: 0; color: #333;
     }
+    .form-controls select {
+      background: #fff;
+    }
+    .form-controls button {
+      border: none; background: var(--clr-slot-hover);
+      color: #fff; transition: background var(--transition);
+    }
+    .form-controls button:hover { background: #d62828; }
 
     /* Course List */
     #course-list {
-      flex: 1;
-      overflow-y: auto;
+      flex: 1; overflow-y: auto;
     }
     .course-item {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       justify-content: space-between;
-      padding: 0.6rem;
-      margin-bottom: 0.4rem;
-      border-radius: 4px;
-      background: var(--clr-sidebar-accent);
+      padding: 0.6rem; margin-bottom: 0.4rem;
+      border-radius: 4px; background: var(--clr-sidebar-accent);
       color: var(--clr-sidebar-text);
       transition: transform var(--transition);
     }
-    .course-item:hover {
-      transform: scale(1.02);
-    }
+    .course-item:hover { transform: scale(1.02); }
     .course-item span { flex: 1; }
     .course-item button {
       background: none; border: none;
@@ -167,63 +144,45 @@
       display: grid;
       grid-template-columns: 60px repeat(5,1fr);
       grid-template-rows: 40px repeat(12,60px);
-      gap: 1px;
-      background: var(--clr-border);
+      gap: 1px; background: var(--clr-border);
     }
     .cell {
       background: var(--clr-sidebar-text);
       position: relative;
-      font-size: 0.85rem;
-      color: #333;
+      font-size: 0.85rem; color: #333;
     }
     .cell.header {
       background: var(--clr-header-bg);
       color: var(--clr-header-text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font-weight: 500;
     }
     .cell.time {
       background: var(--clr-header-bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
-    .cell.slot {
-      transition: background var(--transition);
-    }
-    .cell.slot.dragover {
-      background: var(--clr-slot-hover);
-    }
+    .cell.slot { transition: background var(--transition); }
+    .cell.slot.dragover { background: var(--clr-slot-hover); }
     .scheduled {
-      position: absolute;
-      top: 4px; left: 4px; right: 4px; bottom: 4px;
-      border-radius: 4px;
-      color: #fff;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      cursor: pointer;
+      position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
+      border-radius: 4px; color: #fff; font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; cursor: pointer;
       transition: transform var(--transition), opacity var(--transition);
     }
-    .scheduled:hover {
-      transform: scale(1.03);
-      opacity: 0.9;
-    }
+    .scheduled:hover { transform: scale(1.03); opacity: 0.9; }
 
     /* Print Styles */
     @media print {
-      header, #sidebar, #controls, #course-form, #course-list, #toggle-sidebar {
+      header,
+      #sidebar, #controls,
+      #course-form, #course-list,
+      #toggle-sidebar {
         display: none !important;
       }
       #grid {
-        width: 100%;
-        border: 1px solid var(--clr-print-border);
-        transform: scale(0.8);
-        transform-origin: top left;
+        width: 100%; border: 1px solid #555;
+        transform: scale(0.8); transform-origin: top left;
       }
     }
 
@@ -255,12 +214,14 @@
 
       <form id="course-form">
         <input type="text" id="course-name" placeholder="Course Name" required>
-        <select id="course-faculty">
-          <option value="Science">Science</option>
-          <option value="Engineering">Engineering</option>
-          <option value="Arts">Arts</option>
-        </select>
-        <button type="submit">Add</button>
+        <div class="form-controls">
+          <select id="course-faculty">
+            <option value="Science">Science</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Arts">Arts</option>
+          </select>
+          <button type="submit">Add</button>
+        </div>
       </form>
 
       <div id="course-list"></div>
@@ -271,15 +232,15 @@
     </main>
   </div>
 
-  <footer style="text-align:center;padding:0.8rem;background:#f5f5f5;border-top:1px solid var(--clr-border);">
-    View on GitHub: 
+  <footer style="text-align:center; padding:0.8rem; background:#f5f5f5; border-top:1px solid var(--clr-border);">
+    View on GitHub:
     <a href="https://github.com/bocaletto-luca/TimetableUniversity" target="_blank">
       bocaletto-luca/TimetableUniversity
     </a>
   </footer>
 
   <script>
-    // Data Model
+    // Data model
     let data = {
       courses: [
         { id: 'C1', name: 'Mathematics', faculty: 'Science' },
@@ -290,13 +251,13 @@
       ],
       schedule: []
     };
+
     const days = ['Mon','Tue','Wed','Thu','Fri'];
     const startHour = 8, slotsCount = 12;
 
     // Elements
     const containerEl = document.getElementById('container');
     const toggleBtn     = document.getElementById('toggle-sidebar');
-    const controls      = document.getElementById('controls');
     const fileInput     = document.getElementById('file-input');
     const courseListEl  = document.getElementById('course-list');
 
@@ -305,7 +266,7 @@
       containerEl.classList.toggle('collapsed');
     });
 
-    // Render sidebar courses
+    // Render courses
     function renderCourses() {
       courseListEl.innerHTML = '';
       data.courses.forEach(c => {
@@ -319,13 +280,13 @@
         span.textContent = c.name;
         div.appendChild(span);
 
-        ['✎','✕'].forEach(symbol => {
+        ['✎','✕'].forEach(sym => {
           const btn = document.createElement('button');
-          btn.textContent = symbol;
-          btn.title = symbol==='✎' ? 'Edit' : 'Delete';
+          btn.textContent = sym;
+          btn.title = sym==='✎' ? 'Edit' : 'Delete';
           btn.addEventListener('click', e => {
             e.stopPropagation();
-            symbol==='✎' ? editCourse(c.id) : deleteCourse(c.id);
+            sym==='✎' ? editCourse(c.id) : deleteCourse(c.id);
           });
           div.appendChild(btn);
         });
@@ -333,11 +294,12 @@
         div.addEventListener('dragstart', e => {
           e.dataTransfer.setData('text/plain', c.id);
         });
+
         courseListEl.appendChild(div);
       });
     }
 
-    // Add Course
+    // Add course
     document.getElementById('course-form').addEventListener('submit', e => {
       e.preventDefault();
       const name = e.target['course-name'].value.trim();
@@ -348,9 +310,9 @@
       renderCourses();
     });
 
-    // Edit Course
+    // Edit course
     function editCourse(id) {
-      const course = data.courses.find(c => c.id===id);
+      const course = data.courses.find(c => c.id === id);
       const newName = prompt('Course name:', course.name);
       if (newName) course.name = newName.trim();
       const newFac = prompt('Faculty (Science, Engineering, Arts):', course.faculty);
@@ -359,15 +321,15 @@
       renderCourses();
     }
 
-    // Delete Course
+    // Delete course
     function deleteCourse(id) {
       if (!confirm('Delete this course and its scheduled slots?')) return;
-      data.courses = data.courses.filter(c => c.id!==id);
+      data.courses = data.courses.filter(c => c.id !== id);
       data.schedule = data.schedule.filter(s => {
-        if (s.courseId===id) {
-          const slot = getSlot(s.day, s.hour);
-          slot.dataset.courseId = '';
-          slot.innerHTML = '';
+        if (s.courseId === id) {
+          const slotEl = getSlot(s.day, s.hour);
+          slotEl.dataset.courseId = '';
+          slotEl.innerHTML = '';
           return false;
         }
         return true;
@@ -381,8 +343,8 @@
       grid.innerHTML = '';
       grid.appendChild(createCell('', ['header']));
       days.forEach(d => grid.appendChild(createCell(d, ['header'])));
-      for (let i=0; i<slotsCount; i++) {
-        grid.appendChild(createCell(`${startHour+i}:00`, ['time']));
+      for (let i = 0; i < slotsCount; i++) {
+        grid.appendChild(createCell(`${startHour + i}:00`, ['time']));
         days.forEach(day => {
           const slot = createCell('', ['slot']);
           slot.dataset.day = day;
@@ -394,14 +356,14 @@
     }
 
     // Create cell helper
-    function createCell(text, classes=[]) {
+    function createCell(text, classes = []) {
       const c = document.createElement('div');
       c.classList.add('cell', ...classes);
       c.textContent = text;
       return c;
     }
 
-    // Drag & Drop
+    // Drag & drop setup
     function setupDragDrop(slot) {
       slot.addEventListener('dragover', e => {
         e.preventDefault();
@@ -414,38 +376,41 @@
         e.preventDefault();
         slot.classList.remove('dragover');
         const id = e.dataTransfer.getData('text/plain');
-        if (slot.dataset.courseId) return alert('Conflict: slot occupied');
+        if (slot.dataset.courseId) {
+          alert('Conflict: slot is already occupied');
+          return;
+        }
         scheduleCourse(id, slot.dataset.day, +slot.dataset.hour);
       });
     }
 
-    // Schedule course
+    // Schedule a course
     function scheduleCourse(id, day, hour) {
-      const course = data.courses.find(c => c.id===id);
-      data.schedule.push({ courseId:id, day, hour });
-      const slot = getSlot(day, hour);
+      const course = data.courses.find(c => c.id === id);
+      data.schedule.push({ courseId: id, day, hour });
+      const slotEl = getSlot(day, hour);
       const div = document.createElement('div');
       div.className = 'scheduled';
       div.textContent = course.name;
       div.style.background = getFacultyColor(course.faculty);
       div.addEventListener('dblclick', () => {
         data.schedule = data.schedule.filter(s =>
-          !(s.courseId===id && s.day===day && s.hour===hour)
+          !(s.courseId === id && s.day === day && s.hour === hour)
         );
-        slot.dataset.courseId = '';
-        slot.innerHTML = '';
+        slotEl.dataset.courseId = '';
+        slotEl.innerHTML = '';
       });
-      slot.dataset.courseId = id;
-      slot.appendChild(div);
+      slotEl.dataset.courseId = id;
+      slotEl.appendChild(div);
     }
 
-    // Update scheduled after edit
+    // Update scheduled slots after edit
     function updateScheduled(id) {
       data.schedule.forEach(s => {
-        if (s.courseId===id) {
-          const slot = getSlot(s.day, s.hour);
-          const div = slot.querySelector('.scheduled');
-          const course = data.courses.find(c => c.id===id);
+        if (s.courseId === id) {
+          const slotEl = getSlot(s.day, s.hour);
+          const div = slotEl.querySelector('.scheduled');
+          const course = data.courses.find(c => c.id === id);
           div.textContent = course.name;
           div.style.background = getFacultyColor(course.faculty);
         }
@@ -453,45 +418,49 @@
     }
 
     // Import JSON
-    document.getElementById('import-btn').addEventListener('click', () => fileInput.click());
+    document.getElementById('import-btn').addEventListener('click', () => {
+      fileInput.click();
+    });
     fileInput.addEventListener('change', e => {
       const f = e.target.files[0];
       if (!f) return;
-      const r = new FileReader();
-      r.onload = () => {
+      const reader = new FileReader();
+      reader.onload = () => {
         try {
-          data = JSON.parse(r.result);
+          data = JSON.parse(reader.result);
           buildGrid(); renderCourses();
-          data.schedule.forEach(s => scheduleCourse(s.courseId, s.day, s.hour));
+          data.schedule.forEach(s => {
+            scheduleCourse(s.courseId, s.day, s.hour);
+          });
         } catch {
           alert('Invalid JSON file');
         }
       };
-      r.readAsText(f);
+      reader.readAsText(f);
     });
 
     // Export JSON
     document.getElementById('export-btn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(data, null,2)], {type:'application/json'});
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'timetable.json'; a.click();
       URL.revokeObjectURL(url);
     });
 
-    // Print
+    // Print Timetable
     document.getElementById('print-btn').addEventListener('click', () => window.print());
 
     // Helpers
-    function getSlot(day,hour) {
+    function getSlot(day, hour) {
       return document.querySelector(`.cell.slot[data-day="${day}"][data-hour="${hour}"]`);
     }
-    function getFacultyColor(f) {
-      return ({
-        Science:    '#2ec4b6',
-        Engineering:'#e71d36',
-        Arts:       '#ff9f1c'
-      })[f] || '#8d99ae';
+    function getFacultyColor(faculty) {
+      return {
+        Science:     '#2ec4b6',
+        Engineering: '#e71d36',
+        Arts:        '#ff9f1c'
+      }[faculty] || '#8d99ae';
     }
 
     // Initialize
