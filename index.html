@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timetable University – One-Page Scheduler</title>
+  <meta name="author" content="Bocaletto Luca">
+  <meta name="description" content="Timetable University is a responsive one-page webapp for students to schedule courses by drag-and-drop. Import/export JSON, add, edit, delete courses, detect conflicts, and print directly.">
+  <meta name="keywords" content="timetable, university, schedule, drag and drop, responsive, JSON, print, courses">
+  <link rel="canonical" href="https://github.com/bocaletto-luca/TimetableUniversity">
+  <style>
+    :root {
+      --color-Science: #85DCB0;
+      --color-Engineering: #E27D60;
+      --color-Arts: #C38D9E;
+      --cell-border: #ccc;
+      --header-bg: #f5f5f5;
+      --text-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      display: flex; flex-direction: column;
+      font-family: sans-serif; color: var(--text-color);
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 1rem; background: var(--header-bg);
+      text-align: center; font-size: 1.5rem;
+    }
+
+    #container {
+      flex: 1; display: flex; overflow: hidden;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 240px; padding: 1rem;
+      border-right: 1px solid var(--cell-border);
+      overflow-y: auto;
+    }
+    #sidebar h2 {
+      margin-bottom: 0.5rem; font-size: 1.2rem;
+    }
+    .course-item {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem; margin: 0.5rem 0;
+      border-radius: 4px; color: white;
+      cursor: grab; user-select: none;
+    }
+    .course-item span { flex: 1; }
+    .course-item button {
+      background: transparent; border: none;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem; cursor: pointer;
+      margin-left: 0.5rem;
+    }
+
+    /* Timetable grid */
+    #timetable {
+      flex: 1; overflow: auto; padding: 1rem;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: 60px repeat(5,1fr);
+      grid-template-rows: 30px repeat(12,60px);
+      gap: 1px; background: var(--cell-border);
+    }
+    .cell {
+      background: white; position: relative;
+    }
+    .cell.header {
+      background: var(--header-bg);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold;
+    }
+    .cell.time {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--header-bg); font-size: 0.9rem;
+    }
+    .cell.slot { background: white; }
+    .cell.slot.dragover {
+      outline: 2px dashed #333;
+    }
+    .scheduled {
+      position: absolute; top: 2px; left: 2px;
+      right: 2px; bottom: 2px; padding: 2px 4px;
+      font-size: 0.85rem; color: white; border-radius: 2px;
+      overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; cursor: pointer;
+    }
+
+    /* Controls */
+    #controls {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    #controls > * {
+      padding: 0.4rem 0.6rem; font-size: 0.9rem;
+    }
+
+    @media(max-width:700px){
+      #container { flex-direction: column; }
+      #sidebar {
+        width: 100%; border-right: none;
+        border-bottom: 1px solid var(--cell-border);
+      }
+    }
+
+    /* GitHub ribbon */
+    #github-link {
+      text-align: center; padding: 0.5rem;
+      font-size: 0.85rem; background: #fafafa;
+      border-top: 1px solid var(--cell-border);
+    }
+    #github-link a { color: #0366d6; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>Timetable University</header>
+
+  <div id="container">
+    <aside id="sidebar">
+      <h2>Courses</h2>
+
+      <div id="controls">
+        <button id="import-btn">Import JSON</button>
+        <button id="export-btn">Export JSON</button>
+        <input type="file" id="file-input" accept=".json" style="display:none">
+      </div>
+
+      <form id="course-form">
+        <input type="text" id="course-name" placeholder="Course Name" required>
+        <select id="course-faculty">
+          <option value="Science">Science</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Arts">Arts</option>
+        </select>
+        <button type="submit">Add Course</button>
+      </form>
+
+      <div id="course-list"></div>
+    </aside>
+
+    <section id="timetable">
+      <div id="grid"></div>
+    </section>
+  </div>
+
+  <button id="print-btn">Print Timetable</button>
+
+  <div id="github-link">
+    View on GitHub: 
+    <a href="https://github.com/bocaletto-luca/TimetableUniversity" target="_blank">
+      bocaletto-luca/TimetableUniversity
+    </a>
+  </div>
+
+  <script>
+    // Initial JSON data
+    let data = {
+      courses: [
+        { id: 'C1', name: 'Mathematics', faculty: 'Science' },
+        { id: 'C2', name: 'Physics', faculty: 'Science' },
+        { id: 'C3', name: 'Programming', faculty: 'Engineering' },
+        { id: 'C4', name: 'History', faculty: 'Arts' },
+        { id: 'C5', name: 'Literature', faculty: 'Arts' }
+      ],
+      schedule: [] // { courseId, day, hour }
+    };
+
+    const days = ['Mon','Tue','Wed','Thu','Fri'];
+    const startHour = 8;
+    const slotsCount = 12;
+
+    const courseListEl = document.getElementById('course-list');
+    const fileInput = document.getElementById('file-input');
+
+    // Render courses in sidebar
+    function renderCourses() {
+      courseListEl.innerHTML = '';
+      data.courses.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'course-item';
+        div.style.backgroundColor = `var(--color-${c.faculty})`;
+        div.draggable = true;
+        div.dataset.id = c.id;
+
+        const span = document.createElement('span');
+        span.textContent = c.name;
+        div.appendChild(span);
+
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '✎';
+        editBtn.title = 'Edit';
+        editBtn.addEventListener('click', () => editCourse(c.id));
+        div.appendChild(editBtn);
+
+        // Delete button
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', () => deleteCourse(c.id));
+        div.appendChild(delBtn);
+
+        // Drag handlers
+        div.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', c.id);
+        });
+
+        courseListEl.appendChild(div);
+      });
+    }
+
+    // Add new course
+    document.getElementById('course-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('course-name').value.trim();
+      const faculty = document.getElementById('course-faculty').value;
+      if (!name) return;
+      const id = 'C' + (Date.now() % 10000);
+      data.courses.push({ id, name, faculty });
+      document.getElementById('course-form').reset();
+      renderCourses();
+    });
+
+    // Edit course
+    function editCourse(id) {
+      const course = data.courses.find(c => c.id === id);
+      const newName = prompt('Course name:', course.name);
+      if (newName) course.name = newName.trim();
+      const newFac = prompt('Faculty (Science, Engineering, Arts):', course.faculty);
+      if (newFac) course.faculty = newFac;
+      // update scheduled names and colors
+      data.schedule.forEach(s => {
+        if (s.courseId === id) updateSlotElement(s);
+      });
+      renderCourses();
+    }
+
+    // Delete course
+    function deleteCourse(id) {
+      if (!confirm('Delete this course and all scheduled slots?')) return;
+      data.courses = data.courses.filter(c => c.id !== id);
+      // remove from schedule and UI
+      data.schedule = data.schedule.filter(s => {
+        if (s.courseId === id) {
+          const cell = getSlotCell(s.day, s.hour);
+          if (cell.firstChild) cell.removeChild(cell.firstChild);
+          cell.dataset.courseId = '';
+          return false;
+        }
+        return true;
+      });
+      renderCourses();
+    }
+
+    // Build timetable grid
+    function buildGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      grid.appendChild(cell('', ['header']));
+      days.forEach(d => grid.appendChild(cell(d, ['header'])));
+      for (let i=0; i<slotsCount; i++) {
+        const label = startHour + i + ':00';
+        grid.appendChild(cell(label, ['time']));
+        days.forEach(day => {
+          const slot = cell('', ['slot']);
+          slot.dataset.day = day; slot.dataset.hour = startHour + i;
+          setupDragDrop(slot);
+          grid.appendChild(slot);
+        });
+      }
+    }
+
+    // Create cell
+    function cell(text, classes=[]) {
+      const c = document.createElement('div');
+      c.classList.add('cell', ...classes);
+      c.textContent = text;
+      return c;
+    }
+
+    // Get slot element by day/hour
+    function getSlotCell(day, hour) {
+      return [...document.querySelectorAll('.cell.slot')]
+        .find(c => c.dataset.day===day && +c.dataset.hour===hour);
+    }
+
+    // Drag & drop logic
+    function setupDragDrop(slot) {
+      slot.addEventListener('dragover', e => {
+        e.preventDefault(); slot.classList.add('dragover');
+      });
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('dragover');
+      });
+      slot.addEventListener('drop', e => {
+        e.preventDefault(); slot.classList.remove('dragover');
+        const courseId = e.dataTransfer.getData('text/plain');
+        if (slot.dataset.courseId) return alert('Conflict: timeslot occupied!');
+        scheduleCourse(courseId, slot.dataset.day, +slot.dataset.hour);
+      });
+    }
+
+    // Schedule a course into a slot
+    function scheduleCourse(courseId, day, hour) {
+      const course = data.courses.find(c=>c.id===courseId);
+      data.schedule.push({ courseId, day, hour });
+      const slot = getSlotCell(day, hour);
+      const div = document.createElement('div');
+      div.className = 'scheduled';
+      div.textContent = course.name;
+      div.style.backgroundColor = `var(--color-${course.faculty})`;
+      div.addEventListener('dblclick', () => {
+        // remove
+        data.schedule = data.schedule.filter(s=>!(s.courseId===courseId&&s.day===day&&s.hour===hour));
+        slot.removeChild(div); slot.dataset.courseId='';
+      });
+      slot.dataset.courseId = courseId;
+      slot.appendChild(div);
+    }
+
+    // Update slot visuals when course edited
+    function updateSlotElement(s) {
+      const slot = getSlotCell(s.day, s.hour);
+      const div = slot.querySelector('.scheduled');
+      const course = data.courses.find(c=>c.id===s.courseId);
+      div.textContent = course.name;
+      div.style.backgroundColor = `var(--color-${course.faculty})`;
+    }
+
+    // Import JSON
+    document.getElementById('import-btn').addEventListener('click', () => {
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(reader.result);
+          data = obj;
+          buildGrid();
+          renderCourses();
+          // render schedule
+          data.schedule.forEach(s=>scheduleCourse(s.courseId, s.day, s.hour));
+        } catch {
+          alert('Invalid JSON file!');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Export JSON
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'timetable.json';
+      a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Print
+    document.getElementById('print-btn').addEventListener('click', () => window.print());
+
+    // Initialize app
+    buildGrid();
+    renderCourses();
+  </script>
+</body>
+</html>
