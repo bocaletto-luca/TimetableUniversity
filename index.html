@@ -4,38 +4,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Timetable University – Responsive Scheduler</title>
-  
   <!-- SEO & Author -->
   <meta name="author" content="Bocaletto Luca">
   <meta name="description" content="Timetable University is a modern, responsive one-page webapp for students to schedule courses by drag-and-drop. Import/export JSON, add, edit, delete courses, detect conflicts, and print directly.">
   <meta name="keywords" content="timetable, university, schedule, drag and drop, responsive, JSON, print, courses">
   <link rel="canonical" href="https://github.com/bocaletto-luca/TimetableUniversity">
-
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
-
   <style>
-    /* Variables */
+    /* Color Palette */
     :root {
-      --clr-bg: #f4f6f8;
-      --clr-white: #ffffff;
-      --clr-dark: #2f3e46;
-      --clr-light: #cad2c5;
-      --clr-primary: #84a98c;
-      --clr-secondary: #ddbea9;
-      --clr-danger: #e07a5f;
-      --clr-border: #d3d3d3;
-      --transition: 0.3s ease-in-out;
+      --clr-sidebar-bg: #2b2d42;
+      --clr-sidebar-text: #edf2f4;
+      --clr-sidebar-accent: #8d99ae;
+      --clr-main-bg: #edf2f4;
+      --clr-header-bg: #8d99ae;
+      --clr-header-text: #2b2d42;
+      --clr-border: #d3d3e2;
+      --clr-slot-hover: #ef233c;
+      --clr-print-border: #555;
+      --transition: 0.25s ease-in-out;
       --font: 'Roboto', sans-serif;
-      --sidebar-width: 260px;
+      --sidebar-width: 280px;
     }
 
     /* Reset & Base */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: var(--font);
-      background: var(--clr-bg);
-      color: var(--clr-dark);
+      background: var(--clr-main-bg);
+      color: var(--clr-sidebar-text);
       display: flex;
       flex-direction: column;
       min-height: 100vh;
@@ -51,21 +49,22 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--clr-white);
+      background: var(--clr-header-bg);
+      color: var(--clr-header-text);
       padding: 0.8rem 1.2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky; top: 0; z-index: 100;
     }
     header h1 {
       font-size: 1.4rem;
       font-weight: 500;
     }
     #toggle-sidebar {
+      display: none;
       background: none;
       border: none;
-      font-size: 1.4rem;
-      color: var(--clr-dark);
-      display: none;
+      font-size: 1.6rem;
+      color: var(--clr-header-text);
     }
 
     /* Layout */
@@ -77,39 +76,45 @@
       transition: grid-template-columns var(--transition);
     }
     #sidebar {
-      background: var(--clr-white);
-      border-right: 1px solid var(--clr-border);
-      display: flex;
-      flex-direction: column;
+      background: var(--clr-sidebar-bg);
       padding: 1rem;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
-    #timetable-wrapper {
-      overflow: auto;
+    #main {
       padding: 1rem;
+      overflow: auto;
+      background: var(--clr-main-bg);
     }
 
-    /* Sidebar Controls */
+    /* Controls */
     #controls {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
       margin-bottom: 1rem;
-      flex-wrap: wrap;
     }
     #controls button {
-      padding: 0.5rem 0.8rem;
+      flex: 1;
+      padding: 0.5rem;
       border: none;
       border-radius: 4px;
-      background: var(--clr-primary);
-      color: var(--clr-white);
+      background: var(--clr-sidebar-accent);
+      color: var(--clr-sidebar-text);
       transition: background var(--transition);
     }
     #controls button:hover {
-      background: var(--clr-dark);
+      background: var(--clr-header-bg);
     }
+    #controls input[type="file"] {
+      display: none;
+    }
+
+    /* Course Form */
     #course-form {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
@@ -118,10 +123,20 @@
       padding: 0.5rem;
       border: 1px solid var(--clr-border);
       border-radius: 4px;
+      color: #333;
     }
     #course-form button {
-      background: var(--clr-secondary);
+      border: none;
+      border-radius: 4px;
+      background: var(--clr-slot-hover);
+      color: #fff;
+      transition: background var(--transition);
     }
+    #course-form button:hover {
+      background: #d62828;
+    }
+
+    /* Course List */
     #course-list {
       flex: 1;
       overflow-y: auto;
@@ -133,22 +148,17 @@
       padding: 0.6rem;
       margin-bottom: 0.4rem;
       border-radius: 4px;
-      background: var(--clr-light);
-      color: var(--clr-dark);
+      background: var(--clr-sidebar-accent);
+      color: var(--clr-sidebar-text);
       transition: transform var(--transition);
     }
     .course-item:hover {
       transform: scale(1.02);
     }
-    .course-item span {
-      flex: 1;
-      margin-right: 0.5rem;
-    }
+    .course-item span { flex: 1; }
     .course-item button {
-      background: none;
-      border: none;
-      font-size: 1rem;
-      color: var(--clr-dark);
+      background: none; border: none;
+      font-size: 1rem; color: inherit;
       margin-left: 0.3rem;
     }
 
@@ -156,24 +166,26 @@
     #grid {
       display: grid;
       grid-template-columns: 60px repeat(5,1fr);
-      grid-template-rows: 30px repeat(12,60px);
+      grid-template-rows: 40px repeat(12,60px);
       gap: 1px;
       background: var(--clr-border);
     }
     .cell {
-      background: var(--clr-white);
+      background: var(--clr-sidebar-text);
       position: relative;
       font-size: 0.85rem;
+      color: #333;
     }
     .cell.header {
-      background: var(--clr-light);
+      background: var(--clr-header-bg);
+      color: var(--clr-header-text);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 500;
     }
     .cell.time {
-      background: var(--clr-light);
+      background: var(--clr-header-bg);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -182,14 +194,13 @@
       transition: background var(--transition);
     }
     .cell.slot.dragover {
-      background: var(--clr-secondary);
+      background: var(--clr-slot-hover);
     }
     .scheduled {
       position: absolute;
       top: 4px; left: 4px; right: 4px; bottom: 4px;
-      padding: 4px;
       border-radius: 4px;
-      color: var(--clr-white);
+      color: #fff;
       font-weight: 500;
       display: flex;
       align-items: center;
@@ -205,11 +216,12 @@
 
     /* Print Styles */
     @media print {
-      header, #sidebar, #controls, #course-form, #course-list, #print-btn, #github-link, #toggle-sidebar {
+      header, #sidebar, #controls, #course-form, #course-list, #toggle-sidebar {
         display: none !important;
       }
       #grid {
         width: 100%;
+        border: 1px solid var(--clr-print-border);
         transform: scale(0.8);
         transform-origin: top left;
       }
@@ -221,9 +233,7 @@
       #container.collapsed {
         grid-template-columns: 0 1fr;
       }
-      #container.collapsed #sidebar {
-        overflow: hidden;
-      }
+      #sidebar { overflow: hidden; }
     }
   </style>
 </head>
@@ -239,7 +249,8 @@
       <div id="controls">
         <button id="import-btn">Import JSON</button>
         <button id="export-btn">Export JSON</button>
-        <input type="file" id="file-input" accept=".json" style="display:none">
+        <button id="print-btn">Print Timetable</button>
+        <input type="file" id="file-input" accept=".json">
       </div>
 
       <form id="course-form">
@@ -255,19 +266,17 @@
       <div id="course-list"></div>
     </aside>
 
-    <div id="timetable-wrapper">
+    <main id="main">
       <div id="grid"></div>
-    </div>
+    </main>
   </div>
 
-  <button id="print-btn" style="margin:1rem;align-self:flex-end;">Print Timetable</button>
-
-  <div id="github-link">
+  <footer style="text-align:center;padding:0.8rem;background:#f5f5f5;border-top:1px solid var(--clr-border);">
     View on GitHub: 
     <a href="https://github.com/bocaletto-luca/TimetableUniversity" target="_blank">
       bocaletto-luca/TimetableUniversity
     </a>
-  </div>
+  </footer>
 
   <script>
     // Data Model
@@ -281,28 +290,28 @@
       ],
       schedule: []
     };
-
     const days = ['Mon','Tue','Wed','Thu','Fri'];
     const startHour = 8, slotsCount = 12;
 
     // Elements
     const containerEl = document.getElementById('container');
-    const toggleBtn = document.getElementById('toggle-sidebar');
-    const courseListEl = document.getElementById('course-list');
-    const fileInput = document.getElementById('file-input');
+    const toggleBtn     = document.getElementById('toggle-sidebar');
+    const controls      = document.getElementById('controls');
+    const fileInput     = document.getElementById('file-input');
+    const courseListEl  = document.getElementById('course-list');
 
-    // Sidebar toggle
+    // Toggle sidebar
     toggleBtn.addEventListener('click', () => {
       containerEl.classList.toggle('collapsed');
     });
 
-    // Render courses
+    // Render sidebar courses
     function renderCourses() {
       courseListEl.innerHTML = '';
       data.courses.forEach(c => {
         const div = document.createElement('div');
         div.className = 'course-item';
-        div.style.backgroundColor = `var(--clr-${c.faculty.toLowerCase()})`;
+        div.style.background = getFacultyColor(c.faculty);
         div.draggable = true;
         div.dataset.id = c.id;
 
@@ -310,22 +319,20 @@
         span.textContent = c.name;
         div.appendChild(span);
 
-        const edit = document.createElement('button');
-        edit.textContent = '✎';
-        edit.title = 'Edit';
-        edit.addEventListener('click', () => editCourse(c.id));
-        div.appendChild(edit);
-
-        const del = document.createElement('button');
-        del.textContent = '✕';
-        del.title = 'Delete';
-        del.addEventListener('click', () => deleteCourse(c.id));
-        div.appendChild(del);
+        ['✎','✕'].forEach(symbol => {
+          const btn = document.createElement('button');
+          btn.textContent = symbol;
+          btn.title = symbol==='✎' ? 'Edit' : 'Delete';
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            symbol==='✎' ? editCourse(c.id) : deleteCourse(c.id);
+          });
+          div.appendChild(btn);
+        });
 
         div.addEventListener('dragstart', e => {
           e.dataTransfer.setData('text/plain', c.id);
         });
-
         courseListEl.appendChild(div);
       });
     }
@@ -336,32 +343,31 @@
       const name = e.target['course-name'].value.trim();
       const faculty = e.target['course-faculty'].value;
       if (!name) return;
-      const id = 'C' + Date.now();
-      data.courses.push({ id, name, faculty });
+      data.courses.push({ id: 'C' + Date.now(), name, faculty });
       e.target.reset();
       renderCourses();
     });
 
     // Edit Course
     function editCourse(id) {
-      const course = data.courses.find(c => c.id === id);
+      const course = data.courses.find(c => c.id===id);
       const newName = prompt('Course name:', course.name);
       if (newName) course.name = newName.trim();
       const newFac = prompt('Faculty (Science, Engineering, Arts):', course.faculty);
       if (newFac) course.faculty = newFac;
-      updateScheduledSlots(id);
+      updateScheduled(id);
       renderCourses();
     }
 
     // Delete Course
     function deleteCourse(id) {
       if (!confirm('Delete this course and its scheduled slots?')) return;
-      data.courses = data.courses.filter(c => c.id !== id);
+      data.courses = data.courses.filter(c => c.id!==id);
       data.schedule = data.schedule.filter(s => {
-        if (s.courseId === id) {
-          const cell = getSlot(s.day, s.hour);
-          cell.dataset.courseId = '';
-          cell.innerHTML = '';
+        if (s.courseId===id) {
+          const slot = getSlot(s.day, s.hour);
+          slot.dataset.courseId = '';
+          slot.innerHTML = '';
           return false;
         }
         return true;
@@ -369,16 +375,16 @@
       renderCourses();
     }
 
-    // Build Grid
+    // Build grid
     function buildGrid() {
       const grid = document.getElementById('grid');
       grid.innerHTML = '';
-      grid.appendChild(cell('', ['header']));
-      days.forEach(d => grid.appendChild(cell(d, ['header'])));
-      for (let i = 0; i < slotsCount; i++) {
-        grid.appendChild(cell((startHour + i) + ':00', ['time']));
+      grid.appendChild(createCell('', ['header']));
+      days.forEach(d => grid.appendChild(createCell(d, ['header'])));
+      for (let i=0; i<slotsCount; i++) {
+        grid.appendChild(createCell(`${startHour+i}:00`, ['time']));
         days.forEach(day => {
-          const slot = cell('', ['slot']);
+          const slot = createCell('', ['slot']);
           slot.dataset.day = day;
           slot.dataset.hour = startHour + i;
           setupDragDrop(slot);
@@ -387,17 +393,12 @@
       }
     }
 
-    // Create Cell
-    function cell(text, classes=[]) {
+    // Create cell helper
+    function createCell(text, classes=[]) {
       const c = document.createElement('div');
       c.classList.add('cell', ...classes);
       c.textContent = text;
       return c;
-    }
-
-    // Get slot element
-    function getSlot(day, hour) {
-      return document.querySelector(`.cell.slot[data-day="${day}"][data-hour="${hour}"]`);
     }
 
     // Drag & Drop
@@ -412,41 +413,41 @@
       slot.addEventListener('drop', e => {
         e.preventDefault();
         slot.classList.remove('dragover');
-        const courseId = e.dataTransfer.getData('text/plain');
+        const id = e.dataTransfer.getData('text/plain');
         if (slot.dataset.courseId) return alert('Conflict: slot occupied');
-        scheduleCourse(courseId, slot.dataset.day, +slot.dataset.hour);
+        scheduleCourse(id, slot.dataset.day, +slot.dataset.hour);
       });
     }
 
-    // Schedule Course
-    function scheduleCourse(courseId, day, hour) {
-      const course = data.courses.find(c => c.id === courseId);
-      data.schedule.push({ courseId, day, hour });
+    // Schedule course
+    function scheduleCourse(id, day, hour) {
+      const course = data.courses.find(c => c.id===id);
+      data.schedule.push({ courseId:id, day, hour });
       const slot = getSlot(day, hour);
       const div = document.createElement('div');
       div.className = 'scheduled';
       div.textContent = course.name;
-      div.style.backgroundColor = `var(--clr-${course.faculty.toLowerCase()})`;
+      div.style.background = getFacultyColor(course.faculty);
       div.addEventListener('dblclick', () => {
         data.schedule = data.schedule.filter(s =>
-          !(s.courseId===courseId && s.day===day && s.hour===hour)
+          !(s.courseId===id && s.day===day && s.hour===hour)
         );
         slot.dataset.courseId = '';
         slot.innerHTML = '';
       });
-      slot.dataset.courseId = courseId;
+      slot.dataset.courseId = id;
       slot.appendChild(div);
     }
 
-    // Update scheduled slot visuals
-    function updateScheduledSlots(id) {
+    // Update scheduled after edit
+    function updateScheduled(id) {
       data.schedule.forEach(s => {
-        if (s.courseId === id) {
+        if (s.courseId===id) {
           const slot = getSlot(s.day, s.hour);
           const div = slot.querySelector('.scheduled');
-          const course = data.courses.find(c => c.id === id);
+          const course = data.courses.find(c => c.id===id);
           div.textContent = course.name;
-          div.style.backgroundColor = `var(--clr-${course.faculty.toLowerCase()})`;
+          div.style.background = getFacultyColor(course.faculty);
         }
       });
     }
@@ -454,35 +455,46 @@
     // Import JSON
     document.getElementById('import-btn').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
         try {
-          data = JSON.parse(reader.result);
-          buildGrid();
-          renderCourses();
+          data = JSON.parse(r.result);
+          buildGrid(); renderCourses();
           data.schedule.forEach(s => scheduleCourse(s.courseId, s.day, s.hour));
         } catch {
           alert('Invalid JSON file');
         }
       };
-      reader.readAsText(file);
+      r.readAsText(f);
     });
 
     // Export JSON
     document.getElementById('export-btn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(data, null,2)], {type:'application/json'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'timetable.json';
-      a.click(); URL.revokeObjectURL(url);
+      a.href = url; a.download = 'timetable.json'; a.click();
+      URL.revokeObjectURL(url);
     });
 
     // Print
     document.getElementById('print-btn').addEventListener('click', () => window.print());
 
-    // Init
+    // Helpers
+    function getSlot(day,hour) {
+      return document.querySelector(`.cell.slot[data-day="${day}"][data-hour="${hour}"]`);
+    }
+    function getFacultyColor(f) {
+      return ({
+        Science:    '#2ec4b6',
+        Engineering:'#e71d36',
+        Arts:       '#ff9f1c'
+      })[f] || '#8d99ae';
+    }
+
+    // Initialize
     buildGrid();
     renderCourses();
   </script>
